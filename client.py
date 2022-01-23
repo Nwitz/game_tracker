@@ -11,6 +11,7 @@ async def on_ready():
     print('---------------------------------------------')
     print('We have logged in as {0.user}'.format(client))
     print('---------------------------------------------')
+    load_games() 
     return
 
 @client.event
@@ -20,13 +21,17 @@ async def on_message(message):
         return
 
     user_input = message.content
-    if message.content == 'fetch':
+    if user_input == 'fetch':
         print('Fetching steam list')
         call_game_list()
-    elif message.content == 'list':
+    elif user_input == 'list':
         print('Reading steam list')
         read_games_list()
+    elif user_input == 'games_memory':
+        list_games()
     else:
-        get_entry(message.content.lower())
+        entry = get_entry(message.content.lower())
+        if entry != None:
+            add_game((entry["appid"], entry["name"]))
 
 client.run(token)
