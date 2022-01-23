@@ -18,8 +18,10 @@ async def on_message(message):
     #reading user input
     user_input = message.content
     if message.content == 'fetch':
+        print('Fetching steam list')
         call_game_list()
     elif message.content == 'list':
+        print('Reading steam list')
         read_games_list()
     else:
         get_entry(message.content.lower())
