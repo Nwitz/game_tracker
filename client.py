@@ -16,6 +16,9 @@ async def on_ready():
 @client.event
 async def on_message(message):
     #reading user input
+    if message.channel.name != discord_config["channel"]: 
+        return
+
     user_input = message.content
     if message.content == 'fetch':
         print('Fetching steam list')
