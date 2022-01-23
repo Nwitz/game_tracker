@@ -1,7 +1,7 @@
 import requests
 import json
 
-games_list_file = 'data/games_list.json'
+games_list_file = 'Data/games_list.json'
 
 def call_game_list():
     r = requests.get('https://api.steampowered.com/ISteamApps/GetAppList/v2/')
