@@ -1,5 +1,5 @@
 # Project Ignores
-Config/
+Config/config.py
 Data/
 
 # Byte-compiled / optimized / DLL files
