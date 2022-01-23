@@ -1,7 +1,8 @@
 import discord
+from Config.config import discord_config
 
 client = discord.Client()
-token = 'OTM0ODM2NzAzMzkzMzUzNzcx.Ye14hg.LaW_DkWQWKVSXJqWWSB9bhcNrVU'
+token = discord_config["token"]
 #this is the password for the bot to enter the discord server, you have to give it access to the server on the discord developer portal
 
 
