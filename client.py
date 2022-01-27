@@ -31,7 +31,7 @@ async def on_message(message):
         read_games_list()
     elif user_input == 'games_memory':
         list_games()
-    else: #If no message, add game to list
+    else: #If message doesn't match any of the previous checks, add game to list
         entry = get_entry(message.content.lower())
         if entry != None:
             add_game((entry["appid"], entry["name"]))
