@@ -7,7 +7,7 @@ games_list_file = 'Data/game_list.json' # Games being tracked by server (modifie
 games_list_json = []
 
 def load_games(): 
-    # TODO create file if it doesn't exist, currently: Make file in Data named game_list.json, and populate wiht {"game_list":[]}
+    # TODO create file if it doesn't exist, currently: Make file in Data named game_list.json, and populate with {"game_list":[]}
     global games_list_json
     file = open(games_list_file, 'r')
     list_string = file.read()
@@ -63,3 +63,16 @@ def sync_game_list_file():
     file.write(game_list_string)
     file.close()
 
+def delete_game(app_tuple):
+    print("Entering the delete_games function")
+    # Check if game ID exists
+    # for app in games_list_json
+    for app in games_list_json: 
+        if app_tuple[0] == app["appid"]:
+            print(f"\"{app_tuple}\" found, will now be deleted")
+            #Deleting if game found in games_list_json
+            games_list_json.remove(app)
+            sync_game_list_file()
+            print(f'Games being tracked after deletion are: {games_list_json}')
+            return
+    return
