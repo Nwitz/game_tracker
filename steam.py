@@ -89,3 +89,16 @@ def sync_game_list_file():
     # Close file
     file.close()
 
+def delete_game(app_tuple):
+    print("Entering the delete_games function")
+    # Check if game ID exists
+    # for app in games_list_json
+    for app in games_list_json: 
+        if app_tuple[0] == app["appid"]:
+            print(f"\"{app_tuple}\" found, will now be deleted")
+            #Deleting if game found in games_list_json
+            games_list_json.remove(app)
+            sync_game_list_file()
+            print(f'Games being tracked after deletion are: {games_list_json}')
+            return
+    return
