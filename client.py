@@ -8,11 +8,11 @@ token = discord_config["token"]
 #this is the password for the bot to enter the discord server, you have to give it access to the server on the discord developer portal
 
 @client.event
-async def on_ready():
+async def on_ready(): #called once after bot is started and Discord channel opens connection.
     print('---------------------------------------------')
     print('We have logged in as {0.user}'.format(client))
     print('---------------------------------------------')
-    load_games() 
+    load_games()  #Once bot is connected, read games from file
     return
 
 @client.event
@@ -22,7 +22,9 @@ async def on_message(message):
         return
 
     user_input = message.content
-    if user_input == 'fetch':
+
+    #filter out message
+    if user_input == 'fetch': 
         print('Fetching steam list')
         call_game_list()
     elif user_input == 'list':
@@ -37,7 +39,7 @@ async def on_message(message):
         print(f'The entry to be deleted is {entry}')
         if game_name != None:
             delete_game((entry["appid"], entry["name"]))
-    else:
+    else: #If message doesn't match any of the previous checks, add game to list
         entry = get_entry(message.content.lower())
         print(f'The entry to be added is {entry}.')
         if entry != None:
