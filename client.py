@@ -1,6 +1,7 @@
 import discord
 from Config.config import discord_config
 from steam import *
+import re
 
 client = discord.Client()
 token = discord_config["token"]
@@ -29,8 +30,16 @@ async def on_message(message):
         read_games_list()
     elif user_input == 'games_memory':
         list_games()
+    elif 'delete_' in user_input:
+        game_in_input = re.split('_',user_input)
+        game_name = game_in_input[1]
+        entry = get_entry(game_name.lower())
+        print(f'The entry to be deleted is {entry}')
+        if game_name != None:
+            delete_game((entry["appid"], entry["name"]))
     else:
         entry = get_entry(message.content.lower())
+        print(f'The entry to be added is {entry}.')
         if entry != None:
             add_game((entry["appid"], entry["name"]))
 
