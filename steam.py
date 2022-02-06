@@ -5,10 +5,10 @@ games_map_file = 'Data/games_map.json' # Mapping from app ID to Game name (fetch
 wishlist_file = 'Data/wishlist.json' # Games being tracked by server (modified by us)
 
 # Dictionary containing the list of games that have been added by members of the Discord Server
-wishlist_json = []
+wishlist_json = {}
 
 def load_games(): 
-    # TODO create file if it doesn't exist, currently: Make file in Data named game_list.json, and populate wiht {"game_list":[]}
+    # TODO create file if it doesn't exist, currently: Make file in Data named game_list.json, and populate wiht {"wishlist":{}}} or run clear on discord
     global wishlist_json #Reference the file variable games_list_json
     
     # open and read file containing games that have been previously stored
@@ -19,7 +19,7 @@ def load_games():
     file_json = json.loads(list_string) #Contains the JSON obect representing wishlist_file
     
     #Pull out the game_list object from inside the JSON dictionary. 
-    wishlist_json = file_json['game_list']
+    wishlist_json = file_json['wishlist']
 
     file.close() # Close file - important, if we don't close we could have conflicts when trying to open later. 
 
@@ -60,18 +60,41 @@ def get_entry(app_name):
 def add_game(app_tuple): # app_tuple = (appID, game name) 
     #  Check if game ID exists
     # for app in games_list_json
-    for app in wishlist_json: 
-        if app_tuple[0] == app["appid"]:
-            print(f"\"{app_tuple[1]}\" already exists, nice try buckaroo")
-            return
+    key = f'{app_tuple[0]}'
+    if key in wishlist_json:
+        print(f"\"{app_tuple[1]}\" already exists, nice try buckaroo")
+        return
+    
+    app_data = fetch_game_data(key)
+    app_data['name'] = app_tuple[1]
+    print(json.dumps(app_data))
+
     #  Add if doesn't exist
-    new_app = {"appid":app_tuple[0], "name":app_tuple[1]}
-    wishlist_json.append(new_app)
+    wishlist_json[key] = app_data
     sync_wishlist_file()
     return
 
+# Returns fetched data corresponding to app_id in the form of a dict
+def fetch_game_data(app_id_string) :
+    # Fetch from steampowered/api price_overview
+    print(f'https://store.steampowered.com/api/appdetails?filters=price_overview,screenshots&appids={app_id_string}&cc=ca')
+    r = requests.get(f'https://store.steampowered.com/api/appdetails?filters=price_overview&appids={app_id_string}&cc=ca')
+    print(r.status_code)
+    if r.status_code == 200: 
+        app_data = json.loads(r.text) # JSON - dictionary
+        print(json.dumps(app_data))
+        return app_data[app_id_string]['data'] # Internal dictionary of app_id
+
+
+
 def list_games():
     print(wishlist_json)
+
+def clear_wishlist(): 
+    global wishlist_json
+    print("Clearing wishlist")
+    wishlist_json = {}
+    sync_wishlist_file()
 
 # Write the current value stored in games_list_json to the wishlist_file
 # Note: We write to this file for every addition/deletion of games, but only read from it one time: when the bot is ready. 
@@ -80,7 +103,7 @@ def sync_wishlist_file():
     file = open(wishlist_file, 'w')
 
     # Convert games_list_json to a valid JSON objec
-    game_object_json = {'game_list':wishlist_json}
+    game_object_json = {'wishlist':wishlist_json}
 
     # Dump JSON object into String format and write string to file
     game_list_string = json.dumps(game_object_json)
