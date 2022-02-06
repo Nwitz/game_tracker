@@ -1,5 +1,3 @@
-from genericpath import exists
-from pickle import TRUE
 import requests
 import json
 from enum import Enum
@@ -74,7 +72,7 @@ def add_game(app_tuple): # app_tuple = (appID, game name)
     
     app_data = {'name' : app_tuple[1]}
     app_data.update(received_app_data)
-    print(json.dumps(app_data, indent=4, sort_keys=TRUE))
+    print(json.dumps(app_data, indent=4, sort_keys=True))
 
     #  Add if doesn't exist
     wishlist_json[key] = app_data
@@ -110,7 +108,7 @@ def sync_wishlist_file():
     game_object_json = {'wishlist':wishlist_json}
 
     # Dump JSON object into String format and write string to file
-    game_list_string = json.dumps(game_object_json, indent=4, sort_keys=TRUE)
+    game_list_string = json.dumps(game_object_json, indent=4, sort_keys=True)
     file.write(game_list_string)
 
     # Close file
