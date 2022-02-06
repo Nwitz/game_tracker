@@ -26,10 +26,10 @@ async def on_message(message):
     #filter out message
     if user_input == 'fetch': 
         print('Fetching steam list')
-        call_game_list()
+        fetch_games_mapping()
     elif user_input == 'list':
         print('Reading steam list')
-        read_games_list()
+        read_games_mapping()
     elif user_input == 'games_memory':
         list_games()
     elif 'delete_' in user_input:
