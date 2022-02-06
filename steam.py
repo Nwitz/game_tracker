@@ -1,5 +1,8 @@
+from genericpath import exists
+from pickle import TRUE
 import requests
 import json
+from enum import Enum
 
 games_map_file = 'Data/games_map.json' # Mapping from app ID to Game name (fetched from Steam)
 wishlist_file = 'Data/wishlist.json' # Games being tracked by server (modified by us)
@@ -63,29 +66,30 @@ def add_game(app_tuple): # app_tuple = (appID, game name)
     key = f'{app_tuple[0]}'
     if key in wishlist_json:
         print(f"\"{app_tuple[1]}\" already exists, nice try buckaroo")
-        return
+        return (GameAddStatus.EXISTS, wishlist_json[key])
+
+    received_app_data = fetch_game_data(key)
+    if not 'price_overview' in received_app_data:
+        return (GameAddStatus.FREE_GAME, None)
     
-    app_data = fetch_game_data(key)
-    app_data['name'] = app_tuple[1]
-    print(json.dumps(app_data))
+    app_data = {'name' : app_tuple[1]}
+    app_data.update(received_app_data)
+    print(json.dumps(app_data, indent=4, sort_keys=TRUE))
 
     #  Add if doesn't exist
     wishlist_json[key] = app_data
     sync_wishlist_file()
-    return
+    return (GameAddStatus.SUCCESS, app_data)
 
 # Returns fetched data corresponding to app_id in the form of a dict
 def fetch_game_data(app_id_string) :
     # Fetch from steampowered/api price_overview
     print(f'https://store.steampowered.com/api/appdetails?filters=price_overview,screenshots&appids={app_id_string}&cc=ca')
     r = requests.get(f'https://store.steampowered.com/api/appdetails?filters=price_overview&appids={app_id_string}&cc=ca')
-    print(r.status_code)
+    print('status code game fetch', r.status_code)
     if r.status_code == 200: 
         app_data = json.loads(r.text) # JSON - dictionary
-        print(json.dumps(app_data))
         return app_data[app_id_string]['data'] # Internal dictionary of app_id
-
-
 
 def list_games():
     print(wishlist_json)
@@ -106,7 +110,7 @@ def sync_wishlist_file():
     game_object_json = {'wishlist':wishlist_json}
 
     # Dump JSON object into String format and write string to file
-    game_list_string = json.dumps(game_object_json)
+    game_list_string = json.dumps(game_object_json, indent=4, sort_keys=TRUE)
     file.write(game_list_string)
 
     # Close file
@@ -125,3 +129,8 @@ def delete_game(app_tuple):
             print(f'Games being tracked after deletion are: {wishlist_json}')
             return
     return
+
+class GameAddStatus(Enum):
+    EXISTS = 1
+    FREE_GAME = 2
+    SUCCESS = 3
