@@ -35,7 +35,7 @@ async def on_message(message):
         print('Reading steam list')
         read_games_mapping()
     elif user_input == 'games_m':
-        list_games()
+        log_wishlist_memory()
     elif 'delete_' in user_input:
         game_in_input = re.split('_',user_input)
         game_name = game_in_input[1]
@@ -45,12 +45,14 @@ async def on_message(message):
             delete_game((entry["appid"], entry["name"]))
     elif 'clear' in user_input: 
         clear_wishlist()
+    elif 'games' in user_input: #Allow user to list the games we are tracking
+        await list_games(message)
     else: #If message doesn't match any of the previous checks, add game to list
         await handle_add_game_request(message)
 
-async def handle_add_game_request(user_message):
+async def handle_add_game_request(message):
     #If message doesn't match any of the previous checks, add game to list
-    entry = get_entry(user_message.content.lower())
+    entry = get_entry(message.content.lower())
     print(f'The entry to be added is {entry}.')
     reply = ''
     if entry != None:
@@ -66,6 +68,14 @@ async def handle_add_game_request(user_message):
 
     else:
         reply = 'The game doesn\'t exist on steam, try gamepass'
-    await user_message.reply (reply)
+    await message.reply (reply)
+
+# Get all games we are tracking and reply to the author of the message. 
+async def list_games(message):
+    games = get_game_titles()
+    output = "Games we're tracking:"
+    for count, game in enumerate(games, start=1):
+        output = output + f'\n{count}: {game}'
+    await message.reply(output)
 
 client.run(token)
