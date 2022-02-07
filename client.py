@@ -18,6 +18,7 @@ async def on_ready(): #called once after bot is started and Discord channel open
 
 @client.event
 async def on_message(message):
+    # Break so bot doesn't respond to itself
     if message.author == client.user:
         return
 
@@ -36,8 +37,8 @@ async def on_message(message):
         read_games_mapping()
     elif user_input == 'games_m':
         log_wishlist_memory()
-    elif 'delete_' in user_input:
-        game_in_input = re.split('_',user_input)
+    elif 'delete' in user_input:
+        game_in_input = re.split('"',user_input)
         game_name = game_in_input[1]
         entry = get_entry(game_name.lower())
         print(f'The entry to be deleted is {entry}')
