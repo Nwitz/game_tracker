@@ -89,14 +89,23 @@ def fetch_game_data(app_id_string) :
         app_data = json.loads(r.text) # JSON - dictionary
         return app_data[app_id_string]['data'] # Internal dictionary of app_id
 
-def list_games():
+# Log the wishlist memory without filtering (used for testing)
+def log_wishlist_memory():
     print(wishlist_json)
 
+# Clear the memory and file wishlist (used mainly for testing)
 def clear_wishlist(): 
     global wishlist_json
     print("Clearing wishlist")
     wishlist_json = {}
     sync_wishlist_file()
+
+# Iterate through all games we track and return a list of game titles
+def get_game_titles(): 
+    games = []
+    for key in wishlist_json:
+        games.append(wishlist_json[key]['name'])
+    return games
 
 # Write the current value stored in games_list_json to the wishlist_file
 # Note: We write to this file for every addition/deletion of games, but only read from it one time: when the bot is ready. 
