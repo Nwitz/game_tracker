@@ -47,7 +47,7 @@ async def on_message(message):
     elif 'clear' in user_input: 
         clear_wishlist()
     elif 'games' in user_input.lower(): #Allow user to list the games we are tracking
-        await list_games(message)
+        await handle_list_game_request(message)
     else: #If message doesn't match any of the previous checks, add game to list
         await handle_add_game_request(message)
 
@@ -65,7 +65,7 @@ async def handle_add_game_request(message):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            output = await list_games_for_reply(message)
+            output = list_games_for_reply()
             reply = (f'Success! {added_game_result[1]}\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n {output}')
     else:
         reply = 'The game doesn\'t exist on steam, try gamepass'
@@ -77,7 +77,7 @@ async def handle_delete_game_request(message,entry):
     reply = ''
     if entry != None:
         status = delete_game((entry["appid"], entry["name"]))
-        output = await list_games_for_reply(message)
+        output = list_games_for_reply()
         if status == True:
             reply = f'The game was successfully deleted from the tracking list\n{output}'
         else:
@@ -85,20 +85,19 @@ async def handle_delete_game_request(message,entry):
     await message.reply (reply)
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
-async def list_games_for_reply(message):
+def list_games_for_reply():
     games = get_game_titles()
-    output = "Games we're tracking:"
+    output = ""
     for count, game in enumerate(games, start=1):
         output = output + f'\n{count}: {game}'
     return output
 
 # Get all games we are tracking and reply to the author of the message. 
-async def list_games(message):
-    games = get_game_titles()
-    output = "Games we're tracking:"
-    for count, game in enumerate(games, start=1):
-        output = output + f'\n{count}: {game}'
-    await message.reply (output)    
+async def handle_list_game_request(message):
+    print('we got here')
+    games_list = list_games_for_reply()
+    reply = f"Games we're tracking:{games_list}"
+    await message.reply(reply)
 
 
 client.run(token)
