@@ -46,6 +46,8 @@ async def on_message(message):
             await handle_delete_game_request(message,entry)
     elif 'clear' in user_input: 
         clear_wishlist()
+    elif 'day' in user_input: 
+        await debug_day_request(message)
     elif 'games' in user_input.lower(): #Allow user to list the games we are tracking
         await handle_list_game_request(message)
     else: #If message doesn't match any of the previous checks, add game to list
@@ -94,10 +96,12 @@ def list_games_for_reply():
 
 # Get all games we are tracking and reply to the author of the message. 
 async def handle_list_game_request(message):
-    print('we got here')
     games_list = list_games_for_reply()
     reply = f"Games we're tracking:{games_list}"
     await message.reply(reply)
 
+async def debug_day_request(message): 
+    check_game_sales()
+    await message.reply("A day happened")
 
 client.run(token)
