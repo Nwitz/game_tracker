@@ -134,6 +134,34 @@ def delete_game(app_tuple):
     sync_wishlist_file()
     print(f'The result of the delete_game function is: {deleted_game_status}')
     return deleted_game_status
+\
+# https://store.steampowered.com/api/appdetails?filters=price_overview&appids=548430,648800
+def check_game_sales():
+    # Get all App Ids
+    app_ids = wishlist_json.keys()
+    print(app_ids)
+
+    # Convert App Ids to expected string format <id>,<id>,<id>
+    app_ids_string = ','.join(map(str, app_ids))
+
+    # Fetch all price_overviews
+    url = f'https://store.steampowered.com/api/appdetails?filters=price_overview&appids={app_ids_string}'
+    result = requests.get(url)
+    games_on_sale = {}
+    if result.status_code == 200: 
+        sale_data = json.loads(result.text)
+        # TODO: clean up loop with map
+        #loop through all data and extract price overview
+        for app_id in app_ids: 
+            price_overview = sale_data[app_id]['data']['price_overview']
+            # If game is on sale, update wishlist and track sale games
+            if price_overview['discount_percent'] > 0:
+                wishlist_json[app_id]['price_overview'] = price_overview
+                games_on_sale[app_id] = wishlist_json[app_id]
+    sync_wishlist_file()
+    print(f'games on sale: {games_on_sale}')
+    return games_on_sale
+
 
 class GameAddStatus(Enum):
     EXISTS = 1
