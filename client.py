@@ -18,6 +18,7 @@ async def on_ready(): #called once after bot is started and Discord channel open
 
 @client.event
 async def on_message(message):
+
     # Break so bot doesn't respond to itself
     if message.author == client.user:
         return
@@ -26,9 +27,9 @@ async def on_message(message):
     if message.channel.name != discord_config['channel']: 
         return
 
-    user_input = message.content
+    user_input = message.content.lower()
 
-    #filter out message
+    # Filtering out message to find out what to do with it.
     if user_input == 'fetch': 
         print('Fetching steam list')
         fetch_games_mapping()
@@ -41,12 +42,11 @@ async def on_message(message):
         game_in_input = re.split('"',user_input)
         game_name = game_in_input[1]
         entry = get_entry(game_name.lower())
-        print(f'The entry to be deleted is {entry}')
         if game_name != None:
-            delete_game((entry["appid"], entry["name"]))
+            await handle_delete_game_request(message,entry)
     elif 'clear' in user_input: 
         clear_wishlist()
-    elif 'games' in user_input: #Allow user to list the games we are tracking
+    elif 'games' in user_input.lower(): #Allow user to list the games we are tracking
         await list_games(message)
     else: #If message doesn't match any of the previous checks, add game to list
         await handle_add_game_request(message)
@@ -65,11 +65,32 @@ async def handle_add_game_request(message):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            reply = (f'Success! {added_game_result[1]}\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}')
-
+            output = await list_games_for_reply(message)
+            reply = (f'Success! {added_game_result[1]}\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n {output}')
     else:
         reply = 'The game doesn\'t exist on steam, try gamepass'
     await message.reply (reply)
+
+# Function to handle client side of a delete game request, builds reply with list_games_for_reply function
+async def handle_delete_game_request(message,entry):
+    print(f'Entering handle_games_request function\nThe entry to be deleted is {entry}.')
+    reply = ''
+    if entry != None:
+        status = delete_game((entry["appid"], entry["name"]))
+        output = await list_games_for_reply(message)
+        if status == True:
+            reply = f'The game was successfully deleted from the tracking list\n{output}'
+        else:
+            reply = f'There was a problem deleting the game, are we already not tracking it?\n{output}'
+    await message.reply (reply)
+
+# Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
+async def list_games_for_reply(message):
+    games = get_game_titles()
+    output = "Games we're tracking:"
+    for count, game in enumerate(games, start=1):
+        output = output + f'\n{count}: {game}'
+    return output
 
 # Get all games we are tracking and reply to the author of the message. 
 async def list_games(message):
@@ -77,6 +98,7 @@ async def list_games(message):
     output = "Games we're tracking:"
     for count, game in enumerate(games, start=1):
         output = output + f'\n{count}: {game}'
-    await message.reply(output)
+    await message.reply (output)    
+
 
 client.run(token)
