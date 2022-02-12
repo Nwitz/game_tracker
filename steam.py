@@ -125,17 +125,15 @@ def sync_wishlist_file():
 
 def delete_game(app_tuple):
     print("Entering the delete_games function")
-    # Check if game ID exists
-    # for app in games_list_json
-    for app in wishlist_json: 
-        if app_tuple[0] == app["appid"]:
-            print(f"\"{app_tuple}\" found, will now be deleted")
-            #Deleting if game found in games_list_json
-            wishlist_json.remove(app)
-            sync_wishlist_file()
-            print(f'Games being tracked after deletion are: {wishlist_json}')
-            return
-    return
+    app_to_delete = f'{app_tuple[0]}'
+    if app_to_delete in wishlist_json:
+        del wishlist_json[app_to_delete]
+        deleted_game_status = True
+    else:
+        deleted_game_status = False
+    sync_wishlist_file()
+    print(f'The result of the delete_game function is: {deleted_game_status}')
+    return deleted_game_status
 
 class GameAddStatus(Enum):
     EXISTS = 1
