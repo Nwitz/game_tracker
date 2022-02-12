@@ -81,7 +81,7 @@ async def handle_delete_game_request(message,entry):
         if status == True:
             reply = f'The game was successfully deleted from the tracking list\n{output}'
         else:
-            reply = f'There was a problem deleting the game, are we already not tracking it?\n{output}'
+            reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
     await message.reply (reply)
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
