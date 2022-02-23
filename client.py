@@ -100,8 +100,22 @@ async def handle_list_game_request(message):
     reply = f"Games we're tracking:{games_list}"
     await message.reply(reply)
 
-async def debug_day_request(message): 
-    check_game_sales()
-    await message.reply("A day happened")
+async def debug_day_request(message):
+    results = check_game_sales()
+    reply = ''
+    for key in results:
+        formatted_game = format_game_for_reply(results[key])
+        reply = f'{reply}\n{formatted_game}'
+    await message.reply(f"A day happened {reply}")
+
+def format_game_for_reply(game):
+    # TODO add url, need to bring in app id.
+    # TODO get Noah's oppinion on .replace(), seems unstable
+    name = game['name']
+    discounted_percent = game['price_overview']["discount_percent"]
+    discounted_price = game['price_overview']['final_formatted']
+    formatted_discounted_price = discounted_price.replace('CDN$ ','')
+    formatted_game = f'**{name}** is on sale for ${formatted_discounted_price} - {discounted_percent}% off!'
+    return formatted_game
 
 client.run(token)
