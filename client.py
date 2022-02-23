@@ -1,8 +1,12 @@
 import discord
+from discord.ext import commands, tasks
 from Config.config import discord_config
 from steam import *
 import re
 from enum import Enum
+import time
+from datetime import datetime, timedelta
+import asyncio
 
 client = discord.Client()
 token = discord_config["token"]
@@ -13,7 +17,6 @@ async def on_ready(): #called once after bot is started and Discord channel open
     print('---------------------------------------------')
     print('We have logged in as {0.user}'.format(client))
     print('---------------------------------------------')
-    load_games()  #Once bot is connected, read games from file
     return
 
 @client.event
@@ -47,7 +50,7 @@ async def on_message(message):
     elif 'clear' in user_input: 
         clear_wishlist()
     elif 'day' in user_input: 
-        await debug_day_request(message)
+        await daily_wishlist_check()
     elif 'games' in user_input.lower(): #Allow user to list the games we are tracking
         await handle_list_game_request(message)
     else: #If message doesn't match any of the previous checks, add game to list
@@ -104,4 +107,30 @@ async def debug_day_request(message):
     check_game_sales()
     await message.reply("A day happened")
 
+@tasks.loop(hours=24)
+async def daily_wishlist_check():
+    games = check_game_sales()
+    channel = client.get_channel(discord_config["channel_id"])
+    print(channel)
+    print(games)
+    await channel.send(games)
+
+@daily_wishlist_check.before_loop
+async def configure_daily_wishlist_check():
+    print('here')
+    hour = 10
+    minute = 00
+    await client.wait_until_ready()
+    now = datetime.now()
+    future = datetime(now.year, now.month, now.day, hour, minute)
+    print(f'now - hour:{now.hour}, minute:{now.minute}\ntarget - hour:{hour}, minute: {minute}')
+    if now.hour > hour or (now.hour == hour and now.minute > minute): 
+        print("Going to next day")
+        future += timedelta(days=1)
+    print(future)
+    print(future - now)
+    await asyncio.sleep((future-now).seconds)
+
+load_games() 
+daily_wishlist_check.start()
 client.run(token)
