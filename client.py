@@ -154,8 +154,8 @@ async def friday_reminder():
 
 @friday_reminder.before_loop
 async def configure_friday_check():
-    hour = 18
-    minute = 18
+    hour = 20
+    minute = 00
     friday = 5
     await client.wait_until_ready()
     now = datetime.now()
