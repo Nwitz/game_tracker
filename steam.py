@@ -1,9 +1,11 @@
 import requests
 import json
+import random
 from enum import Enum
 
 games_map_file = 'Data/games_map.json' # Mapping from app ID to Game name (fetched from Steam)
 wishlist_file = 'Data/wishlist.json' # Games being tracked by server (modified by us)
+friday_file = 'Friday/phrases.json'
 
 # Dictionary containing the list of games that have been added by members of the Discord Server
 wishlist_json = {}
@@ -59,7 +61,7 @@ def get_entry(app_name):
 
 # Add a game to the game list json object in memory, and sync with the file incase bot goes down. 
 def add_game(app_tuple): # app_tuple = (appID, game name) 
-    #  Check if game ID exists
+    # Check if game ID exists
     # for app in games_list_json
     key = f'{app_tuple[0]}'
     if key in wishlist_json:
@@ -74,7 +76,7 @@ def add_game(app_tuple): # app_tuple = (appID, game name)
     app_data.update(received_app_data)
     print(json.dumps(app_data, indent=4, sort_keys=True))
 
-    #  Add if doesn't exist
+    # Add if doesn't exist
     wishlist_json[key] = app_data
     sync_wishlist_file()
     return (GameAddStatus.SUCCESS, app_data)
@@ -124,7 +126,6 @@ def sync_wishlist_file():
     file.close()
 
 def delete_game(app_tuple):
-    print("Entering the delete_games function")
     app_to_delete = f'{app_tuple[0]}'
     if app_to_delete in wishlist_json:
         del wishlist_json[app_to_delete]
@@ -161,6 +162,16 @@ def check_game_sales():
     print(f'games on sale: {games_on_sale}')
     return games_on_sale
 
+# Doesnt do anything until it is called in Noah's friday loop.
+# randomly fetches a tuple from Friday/phrases and returns the 2nd value from the tuple (the string we want.)
+def friday_phrase_randomizer():
+    with open(friday_file) as f:
+        data = json.load(f)
+        for key in data:
+            random_list = random.sample(data.items(), 1)
+            res = [x[1] for x in random_list]
+            print(res[0])
+            return res[0]
 
 class GameAddStatus(Enum):
     EXISTS = 1
