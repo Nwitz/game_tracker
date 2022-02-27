@@ -1,3 +1,4 @@
+from datetime import datetime
 import requests
 import json
 import random
@@ -74,6 +75,7 @@ def add_game(app_tuple): # app_tuple = (appID, game name)
     
     app_data = {'name' : app_tuple[1]}
     app_data.update(received_app_data)
+    app_data['sale_history'] = build_empty_sale_history()
     print(json.dumps(app_data, indent=4, sort_keys=True))
 
     # Add if doesn't exist
@@ -147,20 +149,51 @@ def check_game_sales():
     # Fetch all price_overviews
     url = f'https://store.steampowered.com/api/appdetails?filters=price_overview&appids={app_ids_string}'
     result = requests.get(url)
-    games_on_sale = {}
+    sales = {}
+    new_sales = {}
     if result.status_code == 200: 
         sale_data = json.loads(result.text)
         # TODO: clean up loop with map
         #loop through all data and extract price overview
+        
         for app_id in app_ids: 
             price_overview = sale_data[app_id]['data']['price_overview']
-            # If game is on sale, update wishlist and track sale games
-            if price_overview['discount_percent'] > 0:
+            sale_history = wishlist_json[app_id]['sale_history']
+            on_sale_yesterday = sale_history['sale_start'] != None
+            on_sale = price_overview['discount_percent'] > 0
+
+            if on_sale: 
+                if not on_sale_yesterday:
+                    date = datetime.now().date()
+                    print(f"date: {date}")
+                    sale_history['sale_start'] = f'{date}'
+                    wishlist_json[app_id]['price_overview'] = price_overview
+                    new_sales[app_id] = wishlist_json[app_id]
+                else: 
+                    sales[app_id] = wishlist_json[app_id]
+            elif on_sale_yesterday:
+                sale_history['last_sale_start'] = sale_history['sale_start']
+                date = datetime.now().date()
+                sale_history['last_sale_end'] = f'{date}'
+                sale_history['sale_start'] = None
                 wishlist_json[app_id]['price_overview'] = price_overview
-                games_on_sale[app_id] = wishlist_json[app_id]
+
     sync_wishlist_file()
-    print(f'games on sale: {games_on_sale}')
+    print(f'new sales: \n{new_sales}')
+    print(f'still on sale: \n{sales}')
+    return new_sales, sales
+
+def get_game_sales(): 
+    app_ids = wishlist_json.keys()
+    games_on_sale = {}
+    for app_id in app_ids: 
+        if wishlist_json[app_id]['sale_history']['sale_start'] != None:
+            games_on_sale[app_id] = wishlist_json[app_id]
     return games_on_sale
+ 
+def build_empty_sale_history():
+    sale_history = {'sale_start':None, 'last_sale_start':None, 'last_sale_end':None}
+    return sale_history
 
 # Doesnt do anything until it is called in Noah's friday loop.
 # randomly fetches a tuple from Friday/phrases and returns the 2nd value from the tuple (the string we want.)
