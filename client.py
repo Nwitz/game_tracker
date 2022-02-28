@@ -147,14 +147,38 @@ async def configure_daily_wishlist_check():
     await client.wait_until_ready()
     now = datetime.now()
     future = datetime(now.year, now.month, now.day, hour, minute)
-    print(f'now - hour:{now.hour}, minute:{now.minute}\ntarget - hour:{hour}, minute: {minute}')
     if now.hour > hour or (now.hour == hour and now.minute > minute): 
-        print("Going to next day")
         future += timedelta(days=1)
-    print(future)
-    print(future - now)
+    print(f'delay to start wishlist check loop: {future-now}')
+    await asyncio.sleep((future-now).seconds)
+
+@tasks.loop(hours=168) # 7 day cycle 
+async def friday_reminder():
+    games_on_sale = get_game_sales()
+    channel = client.get_channel(discord_config["channel_id"])
+    message = f"""    
+    Hey buttholes, it\'s friday, checkout these sales before the weekend!
+
+{games_on_sale}
+    """
+    await channel.send(message)
+
+@friday_reminder.before_loop
+async def configure_friday_check():
+    hour = 20
+    minute = 00
+    friday = 5
+    await client.wait_until_ready()
+    now = datetime.now()
+    future = datetime(now.year, now.month, now.day, hour, minute)
+    days = (friday - now.weekday()) % 7
+    if now.hour > hour or (now.hour == hour and now.minute > minute): 
+        days += 7
+    future += timedelta(days=days)
+    print(f'delay to start friday check loop: {future-now}')
     await asyncio.sleep((future-now).seconds)
 
 load_games() 
 daily_wishlist_check.start()
+friday_reminder.start()
 client.run(token)
