@@ -167,11 +167,10 @@ def check_game_sales():
 def friday_phrase_randomizer():
     with open(friday_file) as f:
         data = json.load(f)
-        for key in data:
-            random_list = random.sample(data.items(), 1)
-            res = [x[1] for x in random_list]
-            print(res[0])
-            return res[0]
+        phrases = data["friday"]
+        random_index = random.randint(0, (len(phrases) - 1))
+        phrase = phrases[random_index]
+        return(phrase)
 
 class GameAddStatus(Enum):
     EXISTS = 1

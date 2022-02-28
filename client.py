@@ -54,8 +54,7 @@ async def on_message(message):
         game_in_input = re.split('"',user_input)
         game_name = game_in_input[1]
         entry = get_entry(game_name.lower())
-        if entry != None:
-            await handle_add_game_request(message, entry)
+        await handle_add_game_request(message, entry)
     elif 'clear' in user_input:
         clear_wishlist()
     elif 'day' in user_input: 

@@ -1,7 +1,8 @@
 {
-    "1" : "It's' Friday bitches, getchur freak on with these games",
-    "2" : "https://open.spotify.com/track/4cG7HUWYHBV6R6tHn1gxrl?si=ceb1aabe599941d8\n Games on sale:",
-    "3" : "No touching grass this weekend lads, checkout these sales",
-    "4" : "Still here, still selling real fake games",
-    "5" : "Hot, single games on sale in your area :wink:"
+    "friday" :
+    ["It's' Friday bitches, getchur freak on with these games",
+    "https://open.spotify.com/track/4cG7HUWYHBV6R6tHn1gxrl?si=ceb1aabe599941d8\n Games on sale:",
+    "No touching grass this weekend lads, checkout these sales",
+    "Still here, still selling real fake games",
+    "Hot, single games on sale in your area :wink:"]
 }
