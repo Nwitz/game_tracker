@@ -167,12 +167,12 @@ async def friday_reminder():
 async def configure_friday_check():
     hour = 20
     minute = 00
-    friday = 5
+    friday = 4
     await client.wait_until_ready()
     now = datetime.now()
     future = datetime(now.year, now.month, now.day, hour, minute)
     days = (friday - now.weekday()) % 7
-    if now.hour > hour or (now.hour == hour and now.minute > minute): 
+    if now.weekday() == friday and (now.hour > hour or (now.hour == hour and now.minute > minute)): 
         days += 7
     future += timedelta(days=days)
     print(f'delay to start friday check loop: {future-now}')
