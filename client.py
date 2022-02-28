@@ -55,6 +55,8 @@ async def on_message(message):
         game_name = game_in_input[1]
         entry = get_entry(game_name.lower())
         await handle_add_game_request(message, entry)
+    elif user_input == 'friday':
+        await friday_reminder()
     elif 'clear' in user_input:
         clear_wishlist()
     elif 'day' in user_input: 
@@ -106,7 +108,7 @@ async def handle_list_game_request(message):
     await message.reply(reply)
 
 async def debug_day_request(message):
-    games = check_game_sales()
+    games = update_game_sales()
     reply = ''
     for key in games:
         formatted_game = format_game_for_reply(games[key])
@@ -120,25 +122,28 @@ def format_game_for_reply(game, game_id):
     discounted_percent = game['price_overview']["discount_percent"]
     discounted_price = game['price_overview']['final_formatted']
     formatted_discounted_price = discounted_price.replace('CDN$ ','$')
-    formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n{url}\n'
+    formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t{url}\n'
     return formatted_game
 
 def format_games_for_reply(games):
     reply = ''
     for key in games:
-        formatted_game = format_game_for_reply(games[key],key)
+        formatted_game = f'•{format_game_for_reply(games[key],key)}'
         reply = f'{reply}\n{formatted_game}'
     return reply
 
-
 @tasks.loop(hours=24)
 async def daily_wishlist_check():
-    games = check_game_sales()
-    reply = f'Toppa da mornin! Today\'s games on sale are:{format_games_for_reply(games)}'
-    channel = client.get_channel(discord_config["channel_id"])
-    print(channel)
-    print(games)
-    await channel.send(reply)
+    new_sales, sales = update_game_sales()
+    reply = f'**TOPPA DA MORNIN!**\n**These sales started today:**\n'
+    if new_sales != {}:
+        new_sales_formatted = format_games_for_reply(new_sales)
+        sales_formatted = format_games_for_reply(sales)
+        if sales_formatted != '':
+            sales_formatted = f'------------------------------------------------------------------\n**These games are still on sale:**\n{sales_formatted}'
+        channel = client.get_channel(discord_config["channel_id"])
+        reply += f'{new_sales_formatted}\n{sales_formatted}'
+        await channel.send(reply)
 
 @daily_wishlist_check.before_loop
 async def configure_daily_wishlist_check():
@@ -156,11 +161,9 @@ async def configure_daily_wishlist_check():
 async def friday_reminder():
     games_on_sale = get_game_sales()
     channel = client.get_channel(discord_config["channel_id"])
-    message = f"""    
-    Hey buttholes, it\'s friday, checkout these sales before the weekend!
-
-{games_on_sale}
-    """
+    formatted_games_string = format_games_for_reply(games_on_sale)
+    phrase = friday_phrase_randomizer()
+    message = f'{phrase}\n{formatted_games_string}'
     await channel.send(message)
 
 @friday_reminder.before_loop

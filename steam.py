@@ -138,7 +138,7 @@ def delete_game(app_tuple):
     print(f'The result of the delete_game function is: {deleted_game_status}')
     return deleted_game_status
     
-def check_game_sales():
+def update_game_sales():
     # Get all App Ids
     app_ids = wishlist_json.keys()
     print(app_ids)
