@@ -135,7 +135,6 @@ def delete_game(app_tuple):
     else:
         deleted_game_status = False
     sync_wishlist_file()
-    print(f'The result of the delete_game function is: {deleted_game_status}')
     return deleted_game_status
     
 def update_game_sales():
@@ -195,8 +194,7 @@ def build_empty_sale_history():
     sale_history = {'sale_start':None, 'last_sale_start':None, 'last_sale_end':None}
     return sale_history
 
-# Doesnt do anything until it is called in Noah's friday loop.
-# randomly fetches a tuple from Friday/phrases and returns the 2nd value from the tuple (the string we want.)
+# Randomly fetches a string from Friday/phrases and returns
 def friday_phrase_randomizer():
     with open(friday_file) as f:
         data = json.load(f)
