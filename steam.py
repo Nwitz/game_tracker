@@ -111,6 +111,9 @@ def get_game_titles():
         games.append(wishlist_json[key]['name'])
     return games
 
+def get_games():
+    return wishlist_json
+
 # Write the current value stored in games_list_json to the wishlist_file
 # Note: We write to this file for every addition/deletion of games, but only read from it one time: when the bot is ready. 
 def sync_wishlist_file():
