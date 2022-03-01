@@ -76,8 +76,7 @@ async def handle_add_game_request(message, entry):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            output = games_were_tracking_string()
-            reply = (f'**{entry["name"].capitalize()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n {output}')
+            reply = (f'**{entry["name"].capitalize()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     else:
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
@@ -96,11 +95,14 @@ async def handle_delete_game_request(message,entry):
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
 def list_games_for_reply():
-    games = get_game_titles()
-    output = ""
-    for count, game in enumerate(games, start=1):
-        output = output + f'\n•\t{game.capitalize()}'
-    return output
+    formatted_games = ''
+    games = get_games()
+    print(games)
+    for key in games: 
+        game_title = games[key]['name']
+        game_url = f'steam://openurl/https://store.steampowered.com/app/{key}'
+        formatted_games = formatted_games + f'\n•\t{game_title} - {game_url}'
+    return formatted_games
 
 # Get all games we are tracking and reply to the author of the message. 
 async def handle_list_game_request(message):
@@ -128,7 +130,7 @@ def format_game_for_reply(game, game_id):
     discounted_percent = game['price_overview']["discount_percent"]
     discounted_price = game['price_overview']['final_formatted']
     formatted_discounted_price = discounted_price.replace('CDN$ ','$')
-    formatted_game = f'**{name.capitalize()}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}\n'
+    formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}\n'
     return formatted_game
 
 def format_games_for_reply(games):
