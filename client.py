@@ -96,12 +96,12 @@ async def handle_add_game_request(message, entry):
 # Function to handle client side of a delete game request, builds reply with list_games_for_reply function
 async def handle_delete_game_request(message,entry):
     reply = ''
-    output = games_were_tracking_string()
     if entry != None:
         status = delete_game((entry["appid"], entry["name"]))
         if status == True:
             reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
         else:
+            output = games_were_tracking_string()
             reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
     await message.reply (reply)
 
