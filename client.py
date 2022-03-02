@@ -48,18 +48,15 @@ async def on_message(message):
         if command == 'fetch': 
             print('Fetching steam list')
             fetch_games_mapping()
-        elif command == 'list':
-            print('Reading steam list')
-            read_games_mapping()
         elif command == 'games_m':
             log_wishlist_memory()
         elif command == 'games': #Allow user to list the games we are tracking
             await handle_list_game_request(message)
         elif command == 'sales':
             await list_sales(message)
-        elif command == 'clear':
-            clear_wishlist()
-            await message.reply ('The wishlist has been cleared.')
+        # elif command == 'clear':
+        #     clear_wishlist()
+        #     await message.reply ('The wishlist has been cleared.')
         elif command == 'help':
             await message.reply("""----------------------------------------------------------
 Hello! I am your customizeable Steam sales tracker!
