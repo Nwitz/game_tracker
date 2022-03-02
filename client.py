@@ -31,7 +31,6 @@ async def on_message(message):
         return
 
     user_input = message.content.lower()
-    am = discord.AllowedMentions(users = False, everyone = False, roles = False, replied_user = True)
     input_parts = re.split(' ', user_input)
     command = input_parts[0].lower()
     if len(input_parts) > 1 and ('"' in user_input): #meaning a quote is present
@@ -58,6 +57,7 @@ async def on_message(message):
         #     clear_wishlist()
         #     await message.reply ('The wishlist has been cleared.')
         elif command == 'help':
+            am = discord.AllowedMentions(users = False, everyone = False, roles = False, replied_user = True)
             await message.reply("""----------------------------------------------------------
 Hello! I am your customizeable Steam sales tracker!
 Use me to add games to your server's wishlist and I will let you know when they go on sale so the lads, and lassies never miss a deal 😎.
