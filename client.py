@@ -32,43 +32,33 @@ async def on_message(message):
 
     user_input = message.content.lower()
     am = discord.AllowedMentions(users = False, everyone = False, roles = False, replied_user = True)
-
-    # Filtering out message to find out what to do with it.
-    if user_input == 'fetch': 
-        print('Fetching steam list')
-        fetch_games_mapping()
-    elif user_input == 'list':
-        print('Reading steam list')
-        read_games_mapping()
-    elif user_input == 'games_m':
-        log_wishlist_memory()
-    # TODO make 'delete' and 'add' functions take regex to grab everything in the quotes.
-    # This will throw all logic into functions to only have a function call here.
-    elif 'delete' in user_input:
-        game_in_input = re.split('"',user_input)
-        game_name = game_in_input[1]
-        entry = get_entry(game_name.lower())
-        await handle_delete_game_request(message,entry)
-    elif 'add' in user_input:
-        game_in_input = re.split('"',user_input)
-        game_name = game_in_input[1]
-        entry = get_entry(game_name.lower())
-        await handle_add_game_request(message, entry)
-    elif user_input == 'friday':
-        await friday_reminder()
-    elif 'clear' in user_input:
-        clear_wishlist()
-        await message.reply ('The wishlist has been cleared.')
-    elif 'day' in user_input: 
-        await daily_wishlist_check()
-    #Allow user to list the games we are tracking
-    elif 'games' in user_input:
-        await handle_list_game_request(message)
-    elif user_input == 'sales':
-        await list_sales(message)
-    # Help message prompt
-    elif user_input == 'help':
-        await message.reply("""----------------------------------------------------------
+    input_parts = re.split(' ', user_input)
+    command = input_parts[0].lower()
+    if len(input_parts) > 1 and ('"' in user_input): #meaning a quote is present
+        game_name = re.split('"', user_input)[1]
+        command = input_parts[0].lower()
+        if command == 'add':
+            print("here")
+            entry = get_entry(game_name.lower())
+            await handle_add_game_request(message, entry)
+        elif command == 'delete':
+            entry = get_entry(game_name.lower())
+            await handle_delete_game_request(message,entry)
+    elif len(input_parts) == 1: 
+        if command == 'fetch': 
+            print('Fetching steam list')
+            fetch_games_mapping()
+        elif command == 'games_m':
+            log_wishlist_memory()
+        elif command == 'games': #Allow user to list the games we are tracking
+            await handle_list_game_request(message)
+        elif command == 'sales':
+            await list_sales(message)
+        # elif command == 'clear':
+        #     clear_wishlist()
+        #     await message.reply ('The wishlist has been cleared.')
+        elif command == 'help':
+            await message.reply("""----------------------------------------------------------
 Hello! I am your customizeable Steam sales tracker!
 Use me to add games to your server's wishlist and I will let you know when they go on sale so the lads, and lassies never miss a deal 😎.
 
