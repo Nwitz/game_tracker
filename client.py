@@ -34,17 +34,9 @@ async def on_message(message):
     am = discord.AllowedMentions(users = False, everyone = False, roles = False, replied_user = True)
     input_parts = re.split(' ', user_input)
     command = input_parts[0].lower()
-    print("here")
-    print(input_parts)
-    print(user_input)
-    print('"' in user_input )
-    print("done")
     if len(input_parts) > 1 and ('"' in user_input): #meaning a quote is present
         game_name = re.split('"', user_input)[1]
-        print(f'_{command}_')
-        print(f'_{game_name}_')
         command = input_parts[0].lower()
-        print(f'will try to add: {"add" == command}')
         if command == 'add':
             print("here")
             entry = get_entry(game_name.lower())
