@@ -98,7 +98,7 @@ async def handle_add_game_request(message, entry):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            reply = (f'**{entry["name"]}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+            reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     else:
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
@@ -110,7 +110,7 @@ async def handle_delete_game_request(message,entry):
     if entry != None:
         status = delete_game((entry["appid"], entry["name"]))
         if status == True:
-            reply = f'**{entry["name"]}** was successfully deleted from our tracking list.'
+            reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
         else:
             reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
     await message.reply (reply)
