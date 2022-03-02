@@ -88,7 +88,7 @@ async def handle_add_game_request(message, entry):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            reply = (f'**{entry["name"].capitalize()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+            reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     else:
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
@@ -98,16 +98,18 @@ async def handle_delete_game_request(message,entry):
     reply = ''
     if entry != None:
         status = delete_game((entry["appid"], entry["name"]))
-        output = games_were_tracking_string()
         if status == True:
-            reply = f'**{entry["name"]}** was successfully deleted from our tracking list.\n{output}'
+            reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
         else:
+            output = games_were_tracking_string()
             reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
     await message.reply (reply)
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
 def list_games_for_reply():
     formatted_games = ''
+    formatted_on_sale_games = ''
+    formatted_not_on_sale_games = ''
     games = get_games()
 
     for key in games: 
@@ -116,10 +118,13 @@ def list_games_for_reply():
         discounted_percent = games[key]['price_overview']['discount_percent']
         discounted_price = games[key]['price_overview']['final_formatted'] 
         formatted_discounted_price = discounted_price.replace('CDN$ ','$')
+        full_price = games[key]['price_overview']['final_formatted']
+        formatted_full_price = full_price.replace('CDN$ ','$')
         if discounted_percent > 0:
-            formatted_games += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+            formatted_on_sale_games += f'\n•\t**{game_title.title()}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
         else:
-            formatted_games += f'\n•\t**{game_title}** is not on sale :smiling_face_with_tear:\n\t  {game_url}'
+            formatted_not_on_sale_games += f'\n•\t**{game_title.title()}** is full price - {formatted_full_price}\n\t  {game_url}'
+    formatted_games += f'{formatted_on_sale_games}{formatted_not_on_sale_games}'
     return formatted_games
 
 # Essentially list_games_for_reply but only grabs sale data, called when user_input == sales
@@ -143,7 +148,7 @@ async def list_sales(message):
             if discounted_percent > 0:
                 formatted_sales += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
     else:
-        formatted_sales = f'{line_string}\nNo games from your wishlist are currently on sale :sob:'
+        formatted_sales = f'{line_string}\nNo games from your wishlist are currently on sale :sob:.'
     formatted_sales += f'\n{line_string}'
     await message.reply(formatted_sales)
 
@@ -159,14 +164,6 @@ def games_were_tracking_string():
     games_were_tracking_string = f'----------------------------\nGames we\'re tracking:\n{output}\n----------------------------'
     return games_were_tracking_string
 
-async def debug_day_request(message):
-    games = update_game_sales()
-    reply = ''
-    for key in games:
-        formatted_game = format_game_for_reply(games[key])
-        reply = f'{reply}\n{formatted_game}'
-    await message.reply(f"A day happened {reply}")
-
 def format_game_for_reply(game, game_id):
     url = f'steam://openurl/https://store.steampowered.com/app/{game_id}'
     name = game['name']
@@ -175,8 +172,6 @@ def format_game_for_reply(game, game_id):
     formatted_discounted_price = discounted_price.replace('CDN$ ','$')
     formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}'
     return formatted_game
-
-
 
 def format_games_for_reply(games):
     reply = ''
