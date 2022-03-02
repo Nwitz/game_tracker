@@ -42,7 +42,7 @@ async def on_message(message):
         read_games_mapping()
     elif user_input == 'games_m':
         log_wishlist_memory()
-    # TODO make 'delete' and 'add' fucntions take regex to grab everything in the quotes.
+    # TODO make 'delete' and 'add' functions take regex to grab everything in the quotes.
     # This will throw all logic into functions to only have a function call here.
     elif 'delete' in user_input:
         game_in_input = re.split('"',user_input)
@@ -61,10 +61,12 @@ async def on_message(message):
         await message.reply ('The wishlist has been cleared.')
     elif 'day' in user_input: 
         await daily_wishlist_check()
-    elif 'games' in user_input.lower(): #Allow user to list the games we are tracking
+    #Allow user to list the games we are tracking
+    elif 'games' in user_input:
         await handle_list_game_request(message)
     elif user_input == 'sales':
         await list_sales(message)
+    # Help message prompt
     elif user_input == 'help':
         await message.reply("""----------------------------------------------------------
 Hello! I am your customizeable Steam sales tracker!
@@ -96,7 +98,7 @@ async def handle_add_game_request(message, entry):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+            reply = (f'**{entry["name"]}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     else:
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
@@ -104,17 +106,20 @@ async def handle_add_game_request(message, entry):
 # Function to handle client side of a delete game request, builds reply with list_games_for_reply function
 async def handle_delete_game_request(message,entry):
     reply = ''
+    output = games_were_tracking_string()
     if entry != None:
         status = delete_game((entry["appid"], entry["name"]))
         if status == True:
-            reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
+            reply = f'**{entry["name"]}** was successfully deleted from our tracking list.'
         else:
-            reply = f'There was a problem deleting the game, are we tracking it?'
+            reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
     await message.reply (reply)
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
 def list_games_for_reply():
     formatted_games = ''
+    formatted_on_sale_games = ''
+    formatted_not_on_sale_games = ''
     games = get_games()
 
     for key in games: 
@@ -123,10 +128,13 @@ def list_games_for_reply():
         discounted_percent = games[key]['price_overview']['discount_percent']
         discounted_price = games[key]['price_overview']['final_formatted'] 
         formatted_discounted_price = discounted_price.replace('CDN$ ','$')
+        full_price = games[key]['price_overview']['final_formatted']
+        formatted_full_price = full_price.replace('CDN$ ','$')
         if discounted_percent > 0:
-            formatted_games += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+            formatted_on_sale_games += f'\n•\t**{game_title.title()}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
         else:
-            formatted_games += f'\n•\t**{game_title}** is not on sale.\n\t  {game_url}'
+            formatted_not_on_sale_games += f'\n•\t**{game_title.title()}** is full price - {formatted_full_price}\n\t  {game_url}'
+    formatted_games += f'{formatted_on_sale_games}{formatted_not_on_sale_games}'
     return formatted_games
 
 # Essentially list_games_for_reply but only grabs sale data, called when user_input == sales
@@ -148,9 +156,9 @@ async def list_sales(message):
             formatted_discounted_price = discounted_price.replace('CDN$ ','$')
             discounted_percent = games[key]['price_overview']['discount_percent']
             if discounted_percent > 0:
-                formatted_sales += f'\n•\t**{game_title.title()}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+                formatted_sales += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
     else:
-        formatted_sales = f'{line_string}\nNo games from your wishlist are currently on sale.'
+        formatted_sales = f'{line_string}\nNo games from your wishlist are currently on sale :sob:.'
     formatted_sales += f'\n{line_string}'
     await message.reply(formatted_sales)
 
@@ -172,7 +180,7 @@ def format_game_for_reply(game, game_id):
     discounted_percent = game['price_overview']['discount_percent']
     discounted_price = game['price_overview']['final_formatted'] 
     formatted_discounted_price = discounted_price.replace('CDN$ ','$')
-    formatted_game = f'**{name.title()}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}'
+    formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}'
     return formatted_game
 
 def format_games_for_reply(games):
