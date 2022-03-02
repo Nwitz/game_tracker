@@ -23,16 +23,15 @@ async def on_ready(): #called once after bot is started and Discord channel open
 
 @client.event
 async def on_message(message):
-
     # Break so bot doesn't respond to itself
     if message.author == client.user:
         return
-
-    #reading user input
+    # Telling bot which channel to listen to
     if message.channel.name != discord_config['channel']: 
         return
 
     user_input = message.content.lower()
+    am = discord.AllowedMentions(users = False, everyone = False, roles = False, replied_user = True)
 
     # Filtering out message to find out what to do with it.
     if user_input == 'fetch': 
@@ -64,6 +63,27 @@ async def on_message(message):
         await daily_wishlist_check()
     elif 'games' in user_input.lower(): #Allow user to list the games we are tracking
         await handle_list_game_request(message)
+    elif user_input == 'sales':
+        await list_sales(message)
+    elif user_input == 'help':
+        await message.reply("""----------------------------------------------------------
+Hello! I am your customizeable Steam sales tracker!
+Use me to add games to your server's wishlist and I will let you know when they go on sale so the lads, and lassies never miss a deal 😎.
+
+Here are some prompts for you to use:
+add "game" - will add this game to the wishlist and I will begin tracking it. (full game name must be writtin in quotations)
+delete "game" - will delete this game from the wishlist and I will no longer track it. (full game name must be written in quotations)
+games - will show you the list of games I am tracking and if they are on sale.
+sales - will show you all the games currently on sale from your wishlist.
+
+Every Friday I will be posting a message with games from your wishlist that are on sale.
+Every day that a new game from your wishlist goes on sale, I will let you know.
+
+That's pretty much it, if you have questions message <@375852152544952322> or <@650136117227683877>.
+
+Love you
+ - Steam Tracker
+----------------------------------------------------------""", allowed_mentions = am)
 
 async def handle_add_game_request(message, entry):
     reply = ''
@@ -97,12 +117,43 @@ async def handle_delete_game_request(message,entry):
 def list_games_for_reply():
     formatted_games = ''
     games = get_games()
-    print(games)
+
     for key in games: 
         game_title = games[key]['name']
         game_url = f'steam://openurl/https://store.steampowered.com/app/{key}'
-        formatted_games = formatted_games + f'\n•\t{game_title} - {game_url}'
+        discounted_percent = games[key]['price_overview']['discount_percent']
+        discounted_price = games[key]['price_overview']['final_formatted'] 
+        formatted_discounted_price = discounted_price.replace('CDN$ ','$')
+        if discounted_percent > 0:
+            formatted_games += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+        else:
+            formatted_games += f'\n•\t**{game_title}** is not on sale :smiling_face_with_tear:\n\t  {game_url}'
     return formatted_games
+
+# Essentially list_games_for_reply but only grabs sale data, called when user_input == sales
+async def list_sales(message):
+    line_string = '----------------------------'
+    formatted_sales = f'{line_string}\nGames on sale from your wishlist:\n'
+    games = get_games()
+    discount_percent_list = []
+    # Make a list of the values of discounted percent to then run through a check to see if any of them are on sale.
+    for key in games:
+        discount_percent_list.append(games[key]['price_overview']['discount_percent'])
+    # Here's our check.
+    any_sales_check = any(i > 0 for i in discount_percent_list)
+    if any_sales_check == True:
+        for key in games:
+            game_title = games[key]['name']
+            game_url = f'steam://openurl/https://store.steampowered.com/app/{key}'
+            discounted_price = games[key]['price_overview']['final_formatted'] 
+            formatted_discounted_price = discounted_price.replace('CDN$ ','$')
+            discounted_percent = games[key]['price_overview']['discount_percent']
+            if discounted_percent > 0:
+                formatted_sales += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+    else:
+        formatted_sales = f'{line_string}\nNo games from your wishlist are currently on sale :sob:'
+    formatted_sales += f'\n{line_string}'
+    await message.reply(formatted_sales)
 
 # Get all games we are tracking and reply to the author of the message. 
 async def handle_list_game_request(message):
@@ -127,11 +178,13 @@ async def debug_day_request(message):
 def format_game_for_reply(game, game_id):
     url = f'steam://openurl/https://store.steampowered.com/app/{game_id}'
     name = game['name']
-    discounted_percent = game['price_overview']["discount_percent"]
-    discounted_price = game['price_overview']['final_formatted']
+    discounted_percent = game['price_overview']['discount_percent']
+    discounted_price = game['price_overview']['final_formatted'] 
     formatted_discounted_price = discounted_price.replace('CDN$ ','$')
-    formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}\n'
+    formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}'
     return formatted_game
+
+
 
 def format_games_for_reply(games):
     reply = ''
@@ -140,27 +193,7 @@ def format_games_for_reply(games):
         reply += f'{formatted_game}\n'
     return reply
 
-@tasks.loop(hours=24)
-async def daily_wishlist_check():
-    new_sales, sales = update_game_sales()
-    line = '------------------------------------------------------------------'
-    toppa_string = '**TOPPA DA MORNIN!**'
-    centered_toppa_string = center_string(toppa_string,line)
-    centered_date_string = center_string(date_as_string(),centered_toppa_string)
-    sales_start_string = 'These sales started **today**:\n'
-    reply = f'{line}\n{centered_toppa_string}\n{centered_date_string}\n{line}\n{sales_start_string}\n'
-    if new_sales != {}:
-        new_sales_formatted = f'{format_games_for_reply(new_sales)}'
-        sales_formatted = f'{format_games_for_reply(sales)}'
-        print('sales formatted is', sales_formatted)
-        if sales_formatted != '':
-            sales_formatted = f'------------------------------------------------------------------\nThese games are **still on sale**:\n\n{sales_formatted}'
-        channel = client.get_channel(discord_config["channel_id"])
-        reply += f'{new_sales_formatted}{sales_formatted}{line}'
-        await channel.send(reply)
-
 # Not perfect, still needs to played with manually to get nice centering but its pretty good
-# I think because characters aren't all the same length visually (that's why + 8)
 def center_string(string_to_center, string_to_center_to):
     string_centered = string_to_center.center(len(string_to_center_to) + 8 )
     return string_centered
@@ -187,6 +220,27 @@ def date_as_string():
     today = date.today()
     date_string = today.strftime('%B %d, %Y')
     return date_string
+
+@tasks.loop(hours=24)
+async def daily_wishlist_check():
+    new_sales, sales = update_game_sales()
+    line = '----------------------------------------------------------'
+    toppa_string = '**TOPPA DA MORNIN!**'
+    at_here_string = '@here'
+    centered_toppa_string = center_string(toppa_string,line)
+    centered_date_string = center_string(date_as_string(),centered_toppa_string)
+    centered_at_here_string = center_string(at_here_string,centered_date_string)
+    sales_start_string = 'These sales started **today**:\n'
+    reply = f'{line}\n{centered_toppa_string}\n{centered_date_string}\n{centered_at_here_string}\n{line}\n{sales_start_string}\n'
+    if new_sales != {}:
+        new_sales_formatted = f'{format_games_for_reply(new_sales)}'
+        sales_formatted = f'{format_games_for_reply(sales)}'
+        print('sales formatted is', sales_formatted)
+        if sales_formatted != '':
+            sales_formatted = f'{line}\nThese games are **still on sale**:\n\n{sales_formatted}'
+        channel = client.get_channel(discord_config["channel_id"])
+        reply += f'{new_sales_formatted}{sales_formatted}{line}'
+        await channel.send(reply)
 
 @daily_wishlist_check.before_loop
 async def configure_daily_wishlist_check():
