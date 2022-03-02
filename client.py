@@ -221,6 +221,17 @@ def date_as_string():
     date_string = today.strftime('%B %d, %Y')
     return date_string
 
+# Made it a function to better compartmentalize it, organization really.
+def friday_reminder_formatter():
+    games_on_sale = get_game_sales()
+    formatted_games_string = format_games_for_reply(games_on_sale)
+    phrase = friday_phrase_randomizer()
+    date = date_as_string()
+    date_string = center_string(date,phrase)
+    line = '------------------------------------------------------------------'
+    message = f'{line}\n{phrase}\n\n{formatted_games_string}{line}'
+    return (message)
+
 @tasks.loop(hours=24)
 async def daily_wishlist_check():
     new_sales, sales = update_game_sales()
@@ -274,17 +285,6 @@ async def configure_friday_check():
     future += timedelta(days=days)
     print(f'delay to start friday check loop: {future-now}')
     await asyncio.sleep((future-now).seconds)
-
-# Made it a function to better compartmentalize it, organization really.
-def friday_reminder_formatter():
-    games_on_sale = get_game_sales()
-    formatted_games_string = format_games_for_reply(games_on_sale)
-    phrase = friday_phrase_randomizer()
-    date = date_as_string()
-    date_string = center_string(date,phrase)
-    line = '------------------------------------------------------------------'
-    message = f'{line}\n{phrase}\n\n{formatted_games_string}{line}'
-    return (message)
 
 load_games() 
 daily_wishlist_check.start()
