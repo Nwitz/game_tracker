@@ -189,7 +189,9 @@ def get_game_sales():
     app_ids = wishlist_json.keys()
     games_on_sale = {}
     for app_id in app_ids: 
-        if wishlist_json[app_id]['sale_history']['sale_start'] != None:
+        print(f'app_id: {app_id}')
+        if wishlist_json[app_id]['price_overview']['discount_percent'] >= 0:
+            print(f'on sale')
             games_on_sale[app_id] = wishlist_json[app_id]
     return games_on_sale
  

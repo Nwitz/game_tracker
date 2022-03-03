@@ -211,10 +211,11 @@ def date_as_string():
 # Made it a function to better compartmentalize it, organization really.
 def friday_reminder_formatter():
     games_on_sale = get_game_sales()
+    if games_on_sale == {}:
+        return None
     formatted_games_string = format_games_for_reply(games_on_sale)
     phrase = friday_phrase_randomizer()
     date = date_as_string()
-    date_string = center_string(date,phrase)
     line = '------------------------------------------------------------------'
     message = f'{line}\n{phrase}\n\n{formatted_games_string}{line}'
     return (message)
@@ -247,7 +248,7 @@ async def configure_daily_wishlist_check():
     await client.wait_until_ready()
     now = datetime.now()
     future = datetime(now.year, now.month, now.day, hour, minute)
-    if now.hour > hour or (now.hour == hour and now.minute > minute): 
+    if now.hour > hour or (now.hour == hour and now.minute >= minute): 
         future += timedelta(days=1)
     print(f'delay to start wishlist check loop: {future-now}')
     await asyncio.sleep((future-now).seconds)
@@ -256,7 +257,8 @@ async def configure_daily_wishlist_check():
 async def friday_reminder():
     channel = client.get_channel(discord_config["channel_id"])
     message = friday_reminder_formatter()
-    await channel.send(message)
+    if message != None: 
+        await channel.send(message)
 
 @friday_reminder.before_loop
 async def configure_friday_check():
@@ -266,12 +268,12 @@ async def configure_friday_check():
     await client.wait_until_ready()
     now = datetime.now()
     future = datetime(now.year, now.month, now.day, hour, minute)
-    days = (friday - now.weekday()) % 7
-    if now.weekday() == friday and (now.hour > hour or (now.hour == hour and now.minute > minute)): 
+    days = ((friday - now.weekday()) % 7)
+    if now.weekday() == friday and (now.hour > hour or (now.hour == hour and now.minute >= minute)): 
         days += 7
     future += timedelta(days=days)
-    print(f'delay to start friday check loop: {future-now}')
-    await asyncio.sleep((future-now).seconds)
+    print(f'delay to start friday check loop: {(future-now)}')
+    await asyncio.sleep((future-now).total_seconds())
 
 load_games() 
 daily_wishlist_check.start()
