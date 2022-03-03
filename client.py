@@ -100,9 +100,9 @@ async def handle_delete_game_request(message,entry):
         status = delete_game((entry["appid"], entry["name"]))
         if status == True:
             reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
-        else:
-            output = games_were_tracking_string()
-            reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
+    else:
+        output = games_were_tracking_string()
+        reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
     await message.reply (reply)
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
