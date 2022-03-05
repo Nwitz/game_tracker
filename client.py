@@ -225,7 +225,7 @@ async def daily_wishlist_check():
     new_sales, sales = update_game_sales()
     line = '----------------------------------------------------------'
     toppa_string = '**TOPPA DA MORNIN!**'
-    at_here_string = '@here'
+    at_here_string = '@everyone'
     centered_toppa_string = center_string(toppa_string,line)
     centered_date_string = center_string(date_as_string(),centered_toppa_string)
     centered_at_here_string = center_string(at_here_string,centered_date_string)
