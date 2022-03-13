@@ -127,6 +127,7 @@ async def handle_add_game_request(message, game_name):
                 break
         if store_matches: 
             client_state.store_game_matches(matching_titles)
+            reply = reply + f'\n\nType "add #" to add the specific title.'
     else:
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
