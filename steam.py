@@ -51,14 +51,22 @@ def read_games_mapping():
     return json.loads(games_list)
 
 # Read the appid - game title mappings from the mapping file, then check each app's game title to find a match with app_name
-def get_entry(app_name):
+# Always return a list, either with multiple or a single game, allow caller to determine what to do with data
+def get_entries(app_name):
     games_list = read_games_mapping()
     apps = games_list['applist']['apps']
+    matches = []
+
     for app in apps:
-        if app_name == app['name'].lower():
+        this_app_name = app['name'].lower()
+        if app_name == this_app_name:
             # Print and return the matching app
-            print(app)
-            return app
+            matches = [app]
+            break
+        elif app_name in this_app_name: 
+            matches.append(app)
+    
+    return matches
 
 # Add a game to the game list json object in memory, and sync with the file incase bot goes down. 
 def add_game(app_tuple): # app_tuple = (appID, game name) 
