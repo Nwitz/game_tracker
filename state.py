@@ -11,8 +11,10 @@ class ClientStateManager:
     two_minutes = 2 * 60
     if self.thread != None: 
       self.thread.cancel()
-    self.thread = threading.Timer(interval=two_minutes, function= self.clear_game_matches)
-    self.thread.start()
+    thread = threading.Timer(interval=two_minutes, function= self.clear_game_matches)
+    thread.setDaemon(True)
+    thread.start()
+    self.thread = thread
     print("clear matches in two minutes - thread started")
 
   def get_game_matches(self):
