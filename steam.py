@@ -7,7 +7,7 @@ from enum import Enum
 games_map_file = 'Data/games_map.json' # Mapping from app ID to Game name (fetched from Steam)
 wishlist_file = 'Data/wishlist.json' # Games being tracked by server (modified by us)
 friday_file = 'Friday/phrases.json'
-special_characters = [':registered',':tm:']
+special_characters = [u"\u2122", u"\u00AE"]
 
 # Dictionary containing the list of games that have been added by members of the Discord Server
 wishlist_json = {}
@@ -221,6 +221,7 @@ def clear_special_characters(string_to_manulate):
     for i in special_characters:
         print('Replacing',i)
         string_to_manulate = string_to_manulate.replace(i, '')
+        print('clean string is:', string_to_manulate)
     print('clean string is:', string_to_manulate)
     return string_to_manulate
     
