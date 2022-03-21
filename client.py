@@ -13,8 +13,9 @@ import asyncio
 
 client = discord.Client()
 token = discord_config["token"]
+# this is the password for the bot to enter the discord server, you have to give it access to the server on the discord developer portal
 client_state = ClientStateManager()
-#this is the password for the bot to enter the discord server, you have to give it access to the server on the discord developer portal
+
 
 @client.event
 async def on_ready(): #called once after bot is started and Discord channel opens connection.
@@ -35,13 +36,16 @@ async def on_message(message):
     user_input = message.content.lower()
     input_parts = re.split(' ', user_input)
     command = input_parts[0].lower()
+    reply = clear_special_characters(user_input)
+    print (reply)
+    print('user_input is', user_input)
     if len(input_parts) > 1 and ('"' in user_input): #meaning a quote is present
         game_name = re.split('"', user_input)[1]
         command = input_parts[0].lower()
         if command == 'add':
             await handle_add_game_request(message, game_name)
         elif command == 'delete':
-            entry = get_entry(game_name.lower())
+            entry = get_entries(game_name.lower())
             await handle_delete_game_request(message,entry)
     elif len(input_parts) == 2:
         index = input_parts[1]
@@ -96,14 +100,13 @@ async def handle_add_game_request_from_match(message, index_string, game_matches
     elif status ==  GameAddStatus.FREE_GAME:
         reply = 'This game is free'
     else:
-        reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+        reply = (f'**{entry["name"]}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     await message.reply (reply)
 
 
 async def handle_add_game_request(message, game_name):
     reply = ''
     matching_titles = get_entries(game_name.lower())
-    print(matching_titles)
     if len(matching_titles) == 1:
         if matching_titles[0]['name'].lower() == game_name.lower(): #exact match
             entry = matching_titles[0]
@@ -115,7 +118,7 @@ async def handle_add_game_request(message, game_name):
         elif status ==  GameAddStatus.FREE_GAME:
             reply = 'This game is free'
         else:
-            reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+            reply = (f'**{entry["name"]}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     elif len(matching_titles) > 1:
         reply = 'There\'s no game with that exact title, did you mean one of these?'
         store_matches = True
@@ -138,7 +141,7 @@ async def handle_delete_game_request(message,entry):
     if entry != None:
         status = delete_game((entry["appid"], entry["name"]))
         if status == True:
-            reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
+            reply = f'**{entry["name"]}** was successfully deleted from our tracking list.'
     else:
         output = games_were_tracking_string()
         reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
@@ -160,9 +163,9 @@ def list_games_for_reply():
         full_price = games[key]['price_overview']['final_formatted']
         formatted_full_price = full_price.replace('CDN$ ','$')
         if discounted_percent > 0:
-            formatted_on_sale_games += f'\n•\t**{game_title.title()}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+            formatted_on_sale_games += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
         else:
-            formatted_not_on_sale_games += f'\n•\t**{game_title.title()}** is full price - {formatted_full_price}\n\t  {game_url}'
+            formatted_not_on_sale_games += f'\n•\t**{game_title}** is full price - {formatted_full_price}\n\t  {game_url}'
     formatted_games += f'{formatted_on_sale_games}{formatted_not_on_sale_games}'
     return formatted_games
 
