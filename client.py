@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands, tasks
 from Config.config import discord_config
 from steam import *
+from state import ClientStateManager
 import re
 from enum import Enum
 import time
@@ -12,6 +13,7 @@ import asyncio
 
 client = discord.Client()
 token = discord_config["token"]
+client_state = ClientStateManager()
 #this is the password for the bot to enter the discord server, you have to give it access to the server on the discord developer portal
 
 @client.event
@@ -37,12 +39,17 @@ async def on_message(message):
         game_name = re.split('"', user_input)[1]
         command = input_parts[0].lower()
         if command == 'add':
-            print("here")
-            entry = get_entry(game_name.lower())
-            await handle_add_game_request(message, entry)
+            await handle_add_game_request(message, game_name)
         elif command == 'delete':
             entry = get_entry(game_name.lower())
             await handle_delete_game_request(message,entry)
+    elif len(input_parts) == 2:
+        index = input_parts[1]
+        game_matches = client_state.get_game_matches()
+        print(f"add number: {game_matches}")
+        if command == 'add' and index.isnumeric() and len(game_matches) > 0:
+            print("add number - in if")
+            await handle_add_game_request_from_match(message, index, game_matches)
     elif len(input_parts) == 1: 
         if command == 'fetch': 
             print('Fetching steam list')
@@ -77,11 +84,31 @@ Love you
  - Steam Tracker
 ----------------------------------------------------------""", allowed_mentions = am)
 
-async def handle_add_game_request(message, entry):
+async def handle_add_game_request_from_match(message, index_string, game_matches):
+    index = int(index_string) - 1
+    entry = game_matches[index]
+    print(entry)
+    added_game_result = add_game((entry["appid"], entry["name"]))
+    status = added_game_result[0]
+    print(status)
+    if status == GameAddStatus.EXISTS:
+        reply = 'Game already being tracked'
+    elif status ==  GameAddStatus.FREE_GAME:
+        reply = 'This game is free'
+    else:
+        reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+    await message.reply (reply)
+
+
+async def handle_add_game_request(message, game_name):
     reply = ''
-    if entry != None:
-        added_game_result = add_game((entry["appid"], entry["name"]))
-        status = added_game_result[0]
+    matching_titles = get_entries(game_name.lower())
+    print(matching_titles)
+    if len(matching_titles) == 1:
+        if matching_titles[0]['name'].lower() == game_name.lower(): #exact match
+            entry = matching_titles[0]
+            added_game_result = add_game((entry["appid"], entry["name"]))
+            status = added_game_result[0]
         print(status)
         if status == GameAddStatus.EXISTS:
             reply = 'Game already being tracked'
@@ -89,6 +116,18 @@ async def handle_add_game_request(message, entry):
             reply = 'This game is free'
         else:
             reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+    elif len(matching_titles) > 1:
+        reply = 'There\'s no game with that exact title, did you mean one of these?'
+        store_matches = True
+        for index, app in enumerate(matching_titles):
+            reply = reply + f'\n{index + 1}: {app["name"]}'
+            if len(reply) > 2000: 
+                reply = f'There are {len(matching_titles)} apps that contain that title, can you be more specific?'
+                store_matches = False
+                break
+        if store_matches: 
+            client_state.store_game_matches(matching_titles)
+            reply = reply + f'\n\nType "add #" to add the specific title.'
     else:
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
