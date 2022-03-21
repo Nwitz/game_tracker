@@ -44,8 +44,8 @@ async def on_message(message):
             clear_matching_games = False
             await handle_add_game_request(message, game_name)
         elif command == 'delete':
-            entry = get_entry(game_name.lower())
-            await handle_delete_game_request(message,entry)
+            entries = get_entries(game_name.lower())
+            await handle_delete_game_request(message,entries)
     elif len(input_parts) == 2:
         index = input_parts[1]
         if command == 'add' and index.isnumeric():
@@ -146,9 +146,10 @@ async def handle_add_game_request(message, game_name):
     await message.reply (reply)
 
 # Function to handle client side of a delete game request, builds reply with list_games_for_reply function
-async def handle_delete_game_request(message,entry):
+async def handle_delete_game_request(message, entries):
     reply = ''
-    if entry != None:
+    if len(entries) == 1:
+        entry = entries[0]
         status = delete_game((entry["appid"], entry["name"]))
         if status == True:
             reply = f'**{entry["name"].title()}** was successfully deleted from our tracking list.'
