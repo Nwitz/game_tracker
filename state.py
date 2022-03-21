@@ -23,5 +23,6 @@ class ClientStateManager:
   def clear_game_matches(self): 
     print("clearing matches")
     self.recent_game_matches = []
-    self.thread.cancel()
-    self.thread = None
+    if self.thread != None: 
+      self.thread.cancel()
+      self.thread = None
