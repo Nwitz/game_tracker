@@ -36,13 +36,11 @@ async def on_message(message):
     user_input = message.content.lower()
     input_parts = re.split(' ', user_input)
     command = input_parts[0].lower()
-    clear_matching_games = True
     print(f'input: {user_input}')
     if len(input_parts) > 1 and ('"' in user_input): #meaning a quote is present
         game_name = re.split('"', user_input)[1]
         command = input_parts[0].lower()
         if command == 'add':
-            clear_matching_games = False
             await handle_add_game_request(message, game_name)
         elif command == 'delete':
             entries = get_entries(game_name.lower())
@@ -51,7 +49,6 @@ async def on_message(message):
     elif len(input_parts) == 2:
         index = input_parts[1]
         if command == 'add' and index.isnumeric():
-            clear_matching_games = False
             await handle_add_game_request_from_match(message, index)
     elif len(input_parts) == 1: 
         if command == 'fetch': 
@@ -88,8 +85,6 @@ That's pretty much it, if you have questions message <@375852152544952322> or <@
 Love you
  - Steam Tracker
 ----------------------------------------------------------""", allowed_mentions = am)
-    if clear_matching_games == True: 
-        client_state.clear_game_matches()
 
 async def handle_add_game_request_from_match(message, index_string):
     index = int(index_string) - 1
