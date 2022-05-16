@@ -7,13 +7,12 @@ from enum import Enum
 games_map_file = 'Data/games_map.json' # Mapping from app ID to Game name (fetched from Steam)
 wishlist_file = 'Data/wishlist.json' # Games being tracked by server (modified by us)
 friday_file = 'Friday/phrases.json'
-special_characters = [u"\u2122", u"\u00AE"]
 
 # Dictionary containing the list of games that have been added by members of the Discord Server
 wishlist_json = {}
 
 def load_games(): 
-    # TODO create file if it doesn't exist, currently: Make file in Data named game_list.json, and populate wiht {"wishlist":{}}} or run clear on discord
+    # TODO create file if it doesn't exist, currently: Make file in Data named game_list.json, and populate with {"wishlist":{}}} or run clear on discord
     global wishlist_json #Reference the file variable games_list_json
     
     # open and read file containing games that have been previously stored
@@ -37,36 +36,59 @@ def fetch_games_mapping():
     # Convert response text to JSON, then dump JSON to string, then back again to text (probably better way to do this)
     data = json.loads(r.text)
     list_string = json.dumps(data)
-    print(list_string)
 
     #Open game-title X appid mapping file for writing and write in mapping string, close file
     games_list = open(games_map_file, 'w' )
     games_list.write(list_string)
     games_list.close
 
-# Read the locally stored apps list retrieved from the 
+# Read all locally stored apps list retrieved from the steam API.
 def read_games_mapping():
     f = open(games_map_file, 'r')
     games_list = f.read()
     f.close()
     return json.loads(games_list)
 
+# Read locally stored wishlist file.
+def read_wishlist_json():
+    f = open(wishlist_file, 'r')
+    wishlist_list = f.read()
+    f.close()
+    return json.loads(wishlist_list)
+
 # Read the appid - game title mappings from the mapping file, then check each app's game title to find a match with app_name
 # Always return a list, either with multiple or a single game, allow caller to determine what to do with data
-def get_entries(app_name):
+def get_entries_from_games_map(app_name):
     games_list = read_games_mapping()
     apps = games_list['applist']['apps']
     matches = []
 
     for app in apps:
-        this_app_name = app['name'].lower()
-        if app_name == this_app_name:
-            # Print and return the matching app
+        current_app_name = app['name'].lower()
+        if app_name == current_app_name:
+            # Return the matching app
             matches = [app]
             break
-        elif app_name in this_app_name: 
+        elif app_name in current_app_name: 
             matches.append(app)
-    
+    return matches
+
+# Always returns a list of tupples with the format (app,'name').
+def get_entries_from_wishlist(app_name):
+    wishlist = read_wishlist_json()
+    apps = wishlist['wishlist']
+    matches = []
+
+    for app in apps:
+        current_app_name = apps[app]['name'].lower()
+        if app_name.lower() == current_app_name:
+            matching_tupple = (app, get_wishlist_title_singular(app))
+            matches.append(matching_tupple)
+            print(f'single match found, returning {matches}')
+            return matches
+        elif app_name.lower() in current_app_name:
+            matching_tupple = (app, get_wishlist_title_singular(app))
+            matches.append(matching_tupple)
     return matches
 
 # Add a game to the game list json object in memory, and sync with the file incase bot goes down. 
@@ -114,13 +136,21 @@ def clear_wishlist():
     sync_wishlist_file()
 
 # Iterate through all games we track and return a list of game titles
-def get_game_titles(): 
+def get_wishlist_titles(): 
     games = []
     for key in wishlist_json:
         games.append(wishlist_json[key]['name'])
     return games
 
-def get_games():
+# Iterate through wishlist and pull a single queried game title.
+def get_wishlist_title_singular(queried_key):
+    game_title =''
+    for key in wishlist_json:
+        if queried_key == key:
+            game_title += wishlist_json[key]['name']
+    return game_title
+
+def get_wishlist_games():
     return wishlist_json
 
 # Write the current value stored in games_list_json to the wishlist_file
@@ -217,14 +247,20 @@ def friday_phrase_randomizer():
         phrase = phrases[random_index]
         return(phrase)
 
+# Get entire info for games from wishlist.json. Helpful to call when 
+def get_complete_info_for_game(gameid):
+    dict_info = {}
+    for appid in wishlist_json:
+        if gameid == int(appid):
+            dict_info.update(wishlist_json[f'{appid}'])
+    return dict_info
+
 def clear_special_characters(string_to_manulate):
+    special_characters = [u"\u2122", u"\u00AE"]
     for i in special_characters:
-        print('Replacing',i)
         string_to_manulate = string_to_manulate.replace(i, '')
-        print('clean string is:', string_to_manulate)
     print('clean string is:', string_to_manulate)
     return string_to_manulate
-    
 
 class GameAddStatus(Enum):
     EXISTS = 1
