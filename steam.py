@@ -247,7 +247,7 @@ def friday_phrase_randomizer():
         phrase = phrases[random_index]
         return(phrase)
 
-# Get entire info for games from wishlist.json. Helpful to call when 
+# Get entire info for games from wishlist.json. Helpful to call when building a reply string.
 def get_complete_info_for_game(gameid):
     dict_info = {}
     for appid in wishlist_json:
