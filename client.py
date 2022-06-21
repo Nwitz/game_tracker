@@ -68,9 +68,9 @@ async def on_message(message):
             await list_sales(message)
         elif command == 'yes':
             await handle_add_game_request_from_match(message, '0')
-        elif command == 'clear':
-            clear_wishlist()
-            await message.reply ('The wishlist has been cleared.')
+        # elif command == 'clear':
+        #     clear_wishlist()
+        #     await message.reply ('The wishlist has been cleared.')
         elif command == 'help':
             am = discord.AllowedMentions(users = False, everyone = False, roles = False, replied_user = True)
             await message.reply("""----------------------------------------------------------
@@ -160,6 +160,8 @@ async def handle_delete_game_request_from_match(message, index_string):
     print('Deleted game result is:', deleted_game_result)
     if deleted_game_result == True:
         reply = f'**{game_tupple[1]}** was successfully deleted from your wishlist.'
+    else:
+        reply = f'There was an error deleting **{game_tupple[1]}**, it was not successfully removed from your wishlist.'
     await message.reply(reply)
 
 # Function to handle client side of a delete game request, builds reply with list_games_for_reply function
@@ -270,7 +272,7 @@ def games_were_tracking_string():
 def format_game_for_reply(game, game_id):
     url = f'steam://openurl/https://store.steampowered.com/app/{game_id}'
     name = game['name']
-    discounted_percent = game['price_overview']
+    discounted_percent = game['price_overview']['discount_percent']
     discounted_price = game['price_overview']['final_formatted'] 
     formatted_discounted_price = discounted_price.replace('CDN$ ','$')
     formatted_game = f'**{name}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {url}'
