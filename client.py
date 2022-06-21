@@ -179,7 +179,8 @@ async def handle_delete_game_request(message, game_name):
         else: # Not exact match
             reply = f'Did you mean **{game_title}**? Write "Yes" to confirm'
             client_state.store_game_matches(matches)
-    elif len(matches) >1:
+    elif len(matches) > 1:
+
         # working with a list with multiple tupples in it, iterate through list of tupples which have this format (appid, app name)
         reply = 'You are not tracking a game with that exact title, did you mean one of these?\n'
         store_matches = True
