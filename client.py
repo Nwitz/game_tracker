@@ -43,13 +43,16 @@ async def on_message(message):
         if command == 'add':
             await handle_add_game_request(message, game_name)
         elif command == 'delete':
-            entries = get_entries(game_name.lower())
-            await handle_delete_game_request(message,entries)
+            clear_matching_games = False
+            await handle_delete_game_request(message, game_name)
 
     elif len(input_parts) == 2:
         index = input_parts[1]
         if command == 'add' and index.isnumeric():
             await handle_add_game_request_from_match(message, index)
+        if command =='delete' and index.isnumeric():
+            clear_matching_games = False
+            await handle_delete_game_request_from_match(message, index)
     elif len(input_parts) == 1: 
         if command == 'fetch': 
             print('Fetching steam list')
@@ -93,22 +96,21 @@ async def handle_add_game_request_from_match(message, index_string):
         print('game matches is empty')
         return
     entry = game_matches[index]
-    print(entry)
     added_game_result = add_game((entry["appid"], entry["name"]))
     status = added_game_result[0]
-    print(status)
     if status == GameAddStatus.EXISTS:
         reply = 'Game already being tracked'
     elif status ==  GameAddStatus.FREE_GAME:
         reply = 'This game is free'
     else:
-        reply = (f'**{entry["name"]}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+        price_reply = price_formatter(entry["appid"])
+        reply = (f'**{entry["name"]}** was successfully added to your wishlist {price_reply}\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
     await message.reply (reply)
 
 
 async def handle_add_game_request(message, game_name):
     reply = ''
-    matching_titles = get_entries(game_name.lower())
+    matching_titles = get_entries_from_games_map(game_name.lower())
     if len(matching_titles) == 1:
         if matching_titles[0]['name'].lower() == game_name.lower(): #exact match
             entry = matching_titles[0]
@@ -121,12 +123,13 @@ async def handle_add_game_request(message, game_name):
             elif status ==  GameAddStatus.FREE_GAME:
                 reply = 'This game is free'
             else:
-                reply = (f'**{entry["name"].title()}** was successfully added to our tracking list.\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
+                price_reply = price_formatter(entry["appid"])
+                reply = (f'**{entry["name"]}** was successfully added to your wishlist {price_reply}\nsteam://openurl/https://store.steampowered.com/app/{entry["appid"]}\n')
         else: # Not exact match
             reply = f'Did you mean **{matching_titles[0]["name"]}**? Write "Yes" to confirm'
             client_state.store_game_matches(matching_titles)
     elif len(matching_titles) > 1:
-        reply = 'There\'s no game with that exact title, did you mean one of these?'
+        reply = 'There\'s no game with that exact title, did you mean one of these?\n'
         store_matches = True
         for index, app in enumerate(matching_titles):
             reply = reply + f'\n{index + 1}: {app["name"]}'
@@ -141,25 +144,74 @@ async def handle_add_game_request(message, game_name):
         reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
 
-# Function to handle client side of a delete game request, builds reply with list_games_for_reply function
-async def handle_delete_game_request(message, entries):
-    reply = ''
-    if len(entries) == 1:
-        entry = entries[0]
-        status = delete_game((entry["appid"], entry["name"]))
-        if status == True:
-            reply = f'**{entry["name"]}** was successfully deleted from our tracking list.'
+async def handle_delete_game_request_from_match(message, index_string):
+    index = int(index_string) - 1
+    game_matches = client_state.get_game_matches()
+    if len(game_matches) == 0:
+        print('game matches is empty')
+        return
+    game_tupple = game_matches[index]
+    deleted_game_result = delete_game(game_tupple)
+    print('Deleted game result is:', deleted_game_result)
+    if deleted_game_result == True:
+        reply = f'**{game_tupple[1]}** was successfully deleted from your wishlist.'
     else:
-        output = games_were_tracking_string()
-        reply = f'There was a problem deleting the game, are we tracking it?\n{output}'
+        reply = f'There was an error deleting **{game_tupple[1]}**, it was not successfully removed from your wishlist.'
+    await message.reply(reply)
+
+# Function to handle client side of a delete game request, builds reply with list_games_for_reply function
+async def handle_delete_game_request(message, game_name):
+    reply = ''
+    matches = get_entries_from_wishlist(game_name)
+    if len(matches) == 1:
+        # Working with a list with a single tupple in it from matches
+        tupple = (matches[0][0], matches[0][1])
+        status = delete_game(tupple)
+        game_title = matches[0][1]
+        client_state.clear_game_matches()
+        if status == True:
+            reply = f'**{game_title}** was successfully deleted from your wishlist.'
+        else: # Not exact match
+            reply = f'Did you mean **{game_title}**? Write "Yes" to confirm'
+            client_state.store_game_matches(matches)
+    elif len(matches) > 1:
+
+        # working with a list with multiple tupples in it, iterate through list of tupples which have this format (appid, app name)
+        reply = 'You are not tracking a game with that exact title, did you mean one of these?\n'
+        store_matches = True
+        for index, app in enumerate(matches):
+            game_title = app[1]
+            reply += f'\n{index + 1}: {game_title}'
+            print('app is:', app)
+            if len(reply) > 2000: 
+                reply = f'There are {len(matches)} apps that contain that title, can you be more specific?'
+                store_matches = False
+                break
+        if store_matches:
+            client_state.store_game_matches(matches)
+            reply = reply + f'\n\nType "delete #" to delete the specific title. We\'ll keep track of this list for 2 minutes.'
+    else:
+        reply = 'This game doesn\'t exist on steam, try gamepass.'
     await message.reply (reply)
+
+# Formatting function for determining if a game is on sale and giving back a string to add to a reply.
+def price_formatter(queried_key):
+    game_info = get_complete_info_for_game(queried_key)
+    discounted_percent = game_info['price_overview']['discount_percent']
+    game_price = game_info['price_overview']['final_formatted']
+    formatted_game_price = game_price.replace('CDN$ ', '$')
+    if discounted_percent > 0:
+        price_reply = f'and is **currently on sale** for {formatted_game_price} - {discounted_percent}% off!'
+    else:
+        price_reply = f'and is currently full price at {formatted_game_price}.'
+    return price_reply
 
 # Essentially list_games but without the reply at the bottom, lets us use output to build into other strings
 def list_games_for_reply():
     formatted_games = ''
     formatted_on_sale_games = ''
     formatted_not_on_sale_games = ''
-    games = get_games()
+    games = get_wishlist_games()
 
     for key in games: 
         game_title = games[key]['name']
@@ -170,7 +222,7 @@ def list_games_for_reply():
         full_price = games[key]['price_overview']['final_formatted']
         formatted_full_price = full_price.replace('CDN$ ','$')
         if discounted_percent > 0:
-            formatted_on_sale_games += f'\n•\t**{game_title}** is on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
+            formatted_on_sale_games += f'\n•\t**{game_title}** is currently on sale for {formatted_discounted_price} - {discounted_percent}% off!\n\t  {game_url}'
         else:
             formatted_not_on_sale_games += f'\n•\t**{game_title}** is full price - {formatted_full_price}\n\t  {game_url}'
     formatted_games += f'{formatted_on_sale_games}{formatted_not_on_sale_games}'
@@ -180,7 +232,7 @@ def list_games_for_reply():
 async def list_sales(message):
     line_string = '----------------------------'
     formatted_sales = f'{line_string}\nGames on sale from your wishlist:\n'
-    games = get_games()
+    games = get_wishlist_games()
     discount_percent_list = []
     # Make a list of the values of discounted percent to then run through a check to see if any of them are on sale.
     for key in games:
@@ -306,6 +358,7 @@ async def configure_daily_wishlist_check():
 async def friday_reminder():
     channel = client.get_channel(discord_config["channel_id"])
     message = friday_reminder_formatter()
+    fetch_games_mapping()
     if message != None: 
         await channel.send(message)
 
