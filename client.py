@@ -286,6 +286,42 @@ def format_games_for_reply(games):
         reply += f'{formatted_game}\n'
     return reply
 
+# Creates reply string to use for Thursday bi-weekly(?) check of steam specials.
+def format_specials_for_reply(json_object):
+    # Note: using len(json_objects) and then having a clause below it to omit some objects if they dont match the currency condition is probably a bad idea.
+    expiration = datetime.fromtimestamp(json_object[0]['discount_expiration'])
+    pretty_date = expiration.strftime('%B %d')
+    pretty_time = expiration.strftime('%I:%M %p')
+    formatted_expiration = f'                 Expiring {pretty_date} - {pretty_time}'
+    # This isn't a safe way to find out when most of the games are expiring
+    expiration_int = json_object[0]['discount_expiration']
+
+    reply_string =''
+    line = '----------------------------------------------------------'
+    centered_specials_string = '                          **STEAM SPECIALS!**'
+    centered_expiration = f'  {formatted_expiration}'
+    centered_at_here_string = f'                                @ everyone'
+    begining_reply_string = f'{line}\n{centered_specials_string}\n{centered_expiration}\n{centered_at_here_string}\n{line}\n'
+    reply_string += begining_reply_string
+    for game in json_object:
+        if game['currency'] == 'CAD':
+            name = game['name']
+            discounted_percent = game['discount_percent']
+            unformatted_price = str(game['final_price'])
+            # This next line will work unless steam decides to put 3 decimal places in their prices. I pray they dont
+            formatted_price =f'${unformatted_price[:-2]}.{unformatted_price[-2:]}'
+            app_id = game['id']
+            url = f'steam://openurl/https://store.steampowered.com/app/{app_id}'
+            specific_expiration = datetime.fromtimestamp(game['discount_expiration'])
+            formatted_s_expiration = specific_expiration.strftime('%B %d %I:%M %p')
+            #In case some games have a different expiration than most.
+            if game['discount_expiration'] != expiration_int:
+                reply_string += f'•\t**{name}** is on sale for {formatted_price} - {discounted_percent}% off until {formatted_s_expiration}!\n\t  {url}\n'
+            else:
+                reply_string += f'•\t**{name}** is on sale for {formatted_price} - {discounted_percent}% off!\n\t  {url}\n'
+    reply_string += f'{line}'
+    return (reply_string)
+
 # Not perfect, still needs to played with manually to get nice centering but its pretty good
 def center_string(string_to_center, string_to_center_to):
     string_centered = string_to_center.center(len(string_to_center_to) + 8 )
@@ -367,6 +403,30 @@ async def friday_reminder():
     if message != None: 
         await channel.send(message)
 
+# TODO get this thursday check to happen when the sales change, we have an epoch timestamp object we could use
+# Also figure out how often this sale catagory refreshes, pretty sure it's every 2 weeks
+@tasks.loop(hours=336)
+async def thursday_sales():
+    channel = client.get_channel(discord_config["channel_id"])
+    specials_json = fetch_specials()
+    message = format_specials_for_reply(specials_json)
+    await channel.send(message)
+
+@thursday_sales.before_loop
+async def configure_thursday_sales():
+    hour = 20
+    minute = 00
+    thursday = 3
+    await client.wait_until_ready()
+    now = datetime.now()
+    future = datetime(now.year, now.month, now.day, hour, minute)
+    days = ((thursday - now.weekday()) % 7)
+    if now.weekday() == thursday and (now.hour > hour or (now.hour == hour and now.minute >= minute)): 
+        days += 7
+        future += timedelta(days=days)
+    print(f'delay to start thursday sales loop: {(future-now)}')
+    await asyncio.sleep((future-now).total_seconds())
+
 @friday_reminder.before_loop
 async def configure_friday_check():
     hour = 17
@@ -385,4 +445,5 @@ async def configure_friday_check():
 load_games() 
 daily_wishlist_check.start()
 friday_reminder.start()
+thursday_sales.start()
 client.run(token)

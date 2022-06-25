@@ -266,3 +266,15 @@ class GameAddStatus(Enum):
     EXISTS = 1
     FREE_GAME = 2
     SUCCESS = 3
+
+# Fetches steams weekly specials, returns json object at the level of the individual games (i.e. specials[0] will give you the first game on special.)
+def fetch_specials():
+    # This call giving trouble and sometimes returning sale data in USD, this link says that adding a currency param is the way to go but it hasnt been proven in my testing. https://stackoverflow.com/questions/26170185/steam-market-api
+    r = requests.get('https://store.steampowered.com/api/featuredcategories?currency=20')
+    if r.status_code != 200:
+        print(f'Error connecting to server - HTML code: {r.status_code}')
+    else:
+        r_json = json.loads(r.text)
+        specials = r_json['specials']['items']
+    return (specials)
+
